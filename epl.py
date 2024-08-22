@@ -5,12 +5,6 @@ import dash_bootstrap_components as dbc
 import dash_ag_grid as dag
 import plotly.graph_objects as go
 
-
-## head to head including home, away and goals. then give a probabilty score.
-## goals and goals per game
-## allow to chat with dataset
-## compare data with officila epl site
-
 url = "https://en.wikipedia.org/wiki/2024%E2%80%9325_Premier_League"
 
 ## get html epl table from wikipedia
@@ -41,8 +35,8 @@ full_stats_grid = dag.AgGrid(
 match_data = pd.read_csv("PremierLeague.csv")
 
 ## create dropdown menus for head to head
-team1 = dcc.Dropdown(match_data["HomeTeam"].unique(), id = "dd_team1", value = "Man United")
-team2 = dcc.Dropdown(match_data["HomeTeam"].unique(), id = "dd_team2", value = "Arsenal")
+team1 = dcc.Dropdown(sorted(match_data["HomeTeam"].unique()), id = "dd_team1", value = "Man United")
+team2 = dcc.Dropdown(sorted(match_data["HomeTeam"].unique()), id = "dd_team2", value = "Arsenal")
 
 
 ## create grids for log and full stats
@@ -51,6 +45,8 @@ log_table = dbc.Container([
         ])
 full_stats_table = dbc.Row([full_stats_grid])
 
+
+pd.options.mode.chained_assignment = None  # default='warn'
 
 ## create layout for head to head tab
 h2h_tab = dbc.Container([
@@ -108,8 +104,8 @@ app.layout = html.Div([
 ## create head to head dropdown function
 def head2head(t1, t2):
     dff = match_data.copy()
-    dff = dff[((dff["HomeTeam"] == t1) | (dff["HomeTeam"] == t2)) & ((dff["AwayTeam"] == t1) | (dff["AwayTeam"] == t2))]
     dff = dff[["Season", "Date", "HomeTeam", "AwayTeam", "FullTimeHomeTeamGoals", "FullTimeAwayTeamGoals"]].sort_values("Date", ascending = False)
+    dff = dff[((dff["HomeTeam"] == t1) | (dff["AwayTeam"] == t1)) & ((dff["HomeTeam"] == t2) | (dff["AwayTeam"] == t2)) ]
     h2h_grid = dag.AgGrid(
         rowData = dff.to_dict("records"),
         columnSize = "responsiveSizeToFit",
@@ -135,10 +131,14 @@ def head2head(t1, t2):
     dft1["AveHGG"] = round(dft1["HGoals"] / dft1["HGames"], 2)
     dft1["AveAGG"] = round(dft1["AGoals"] / dft1["AGames"], 2)
     dft1_f = dft1[dft1.columns[1:-3]]
-    
-    gg_t1 = dft1.loc[1,:].values[7]
-    hgg_t1 = dft1.loc[1,:].values[8]
-    agg_t1 = dft1.loc[1,:].values[9]
+
+    dft1_dag = dag.AgGrid(
+        rowData = dft1.to_dict("records"),
+        columnDefs = [{"field" : i} for i in dft1.columns])
+
+    gg_t1 = dft1.iloc[0,7]
+    hgg_t1 = dft1.iloc[0,8]
+    agg_t1 = dft1.iloc[0,9]
 
     text_t1 = dcc.Markdown(f'''
     #### **Average goals per game : {gg_t1}**
@@ -154,9 +154,9 @@ def head2head(t1, t2):
     dft2["AveAGG"] = round(dft2["AGoals"] / dft2["AGames"], 2)
     dft2_f = dft2[dft2.columns[1:-3]]
 
-    gg_t2 = dft2.loc[0,:].values[7]
-    hgg_t2= dft2.loc[0,:].values[8]
-    agg_t2= dft2.loc[0,:].values[9]
+    gg_t2 = dft2.iloc[0,7]
+    hgg_t2= dft2.iloc[0,8]
+    agg_t2= dft2.iloc[0,9]
 
     text_t2 = dcc.Markdown(f'''
     #### **Average goals per game : {gg_t2}**
@@ -177,10 +177,5 @@ def head2head(t1, t2):
 
     return h2h_grid, dt1, dt2, t1, t2, text_t1, text_t2
 
-    
-
 if __name__ == "__main__":
     app.run(debug = True)
-
-
-
