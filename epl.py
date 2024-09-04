@@ -5,6 +5,11 @@ import dash_bootstrap_components as dbc
 import dash_ag_grid as dag
 import plotly.graph_objects as go
 
+## head to head including home, away and goals. then give a probabilty score.
+## allow to chat with dataset
+## compare data with officila epl site
+## error handling
+
 url = "https://en.wikipedia.org/wiki/2024%E2%80%9325_Premier_League"
 
 ## get html epl table from wikipedia
@@ -49,9 +54,11 @@ full_stats_table = dbc.Row([full_stats_grid])
 pd.options.mode.chained_assignment = None  # default='warn'
 
 ## create layout for head to head tab
-h2h_tab = dbc.Container([
+h2h_tab = html.Div([
+
+    dbc.Container([
     dbc.Row([
-        html.Center([html.H1("Selects teams")]),
+        html.Center([html.H2("Selects teams")]),
         dbc.Col([team1,]),
         dbc.Col([team2]),
         ]),
@@ -60,17 +67,32 @@ h2h_tab = dbc.Container([
         
         ]),
     html.Br(),
-    dbc.Row([
+
+    ]),
+    dbc.Container([
+
+        dbc.Row([
         
-        dbc.Col([html.Center(html.H2(html.Div(id = "head2head_team1_name"))),
+        dbc.Col([html.Center(html.H4("Versus opponent")),
                  html.Div(id = "head2head_team1_home_data"),
                  html.Div(id = "head2head_team1_away_data"),
+                 html.Div(id = "head2head_team1_total_data"),
                  html.Div(id = "head2head_team1_stats"),
                  ]),
-        dbc.Col([html.Center(html.H2(html.Div(id = "head2head_team2_name"))),
+        dbc.Col([html.Center(html.H4("Overall")),
+
+                 ]),
+        dbc.Col([html.Center(html.H4("Versus opponent")),
                  html.Div(id = "head2head_team2_home_data"),
+                 html.Div(id = "head2head_team2_away_data"),
+                 html.Div(id = "head2head_team2_total_data"),
                  html.Div(id = "head2head_team2_stats"),
-                 ]), 
+                 ]),
+        dbc.Col([html.Center(html.H4("Overall")),
+                 
+                 ]),
+            ]),
+
         ]),
     ])
 
@@ -95,12 +117,13 @@ app.layout = html.Div([
     ])
 
 @callback(Output("head2head_grid", "children"),
-          Output("head2head_team1_name", "children"),
-          Output("head2head_team2_name", "children"),
           Output("head2head_team1_stats", "children"),
           Output("head2head_team1_home_data", "children"),
           Output("head2head_team1_away_data", "children"),
+          Output("head2head_team1_total_data", "children"),
           Output("head2head_team2_home_data", "children"),
+          Output("head2head_team2_away_data", "children"),
+          Output("head2head_team2_total_data", "children"),
           Output("head2head_team2_stats", "children"), 
           Input("dd_team1", "value"),
           Input("dd_team2", "value"),)
@@ -155,10 +178,10 @@ def head2head(t1, t2):
     ht_hlp = round(ht_hl / ht_hg, 2)
 
     text_ht1 = dcc.Markdown(f'''
-    #### **Home games : {ht_hg}**
-    #### **Home wins : {ht_hw} with a win rate of {round(ht_hwp*100,2)}%**
-    #### **Home draws : {ht_hd} with a draw rate of {round(ht_hdp*100,2)}%**
-    #### **Home losses : {ht_hl} with a loss rate of {round(ht_hlp*100,2)}%**
+    ##### **Home games : {ht_hg}**
+    ##### **Home wins : {ht_hw} | Win rate : {round(ht_hwp*100,2)}%**
+    ##### **Home draws : {ht_hd} | Draw rate : {round(ht_hdp*100,2)}%**
+    ##### **Home losses : {ht_hl} | Loss rate : {round(ht_hlp*100,2)}%**
     ''')
 
     win_loss_grid_ht = dag.AgGrid(
@@ -186,11 +209,11 @@ def head2head(t1, t2):
     at_al = int(at["A"])
     at_alp = round(at_al / at_ag, 2)
 
-    text_at = dcc.Markdown(f'''
-    #### **Home games : {at_ag}**
-    #### **Home wins : {at_aw} with a win rate of {round(at_awp*100,2)}%**
-    #### **Home draws : {at_ad} with a draw rate of {round(at_adp*100,2)}%**
-    #### **Home losses : {at_al} with a loss rate of {round(at_alp*100,2)}%**
+    text_at1 = dcc.Markdown(f'''
+    ##### **Home games : {at_ag}**
+    ##### **Home wins : {at_aw} | Win rate : {round(at_awp*100,2)}%**
+    ##### **Home draws : {at_ad} | Draw rate : {round(at_adp*100,2)}%**
+    ##### **Home losses : {at_al} | Loss rate : {round(at_alp*100,2)}%**
     ''')
 
 
@@ -204,13 +227,63 @@ def head2head(t1, t2):
     ht_alp = round(ht_al / ht_ag, 2)
 
     text_ht2 = dcc.Markdown(f'''
-    #### **Away games : {ht_ag}**
-    #### **Away wins : {ht_aw} with a win rate of {round(ht_awp*100,2)}%**
-    #### **Away draws : {ht_ad} with a draw rate of {round(ht_adp*100,2)}%**
-    #### **Away losses : {ht_al} with a loss rate of {round(ht_alp*100,2)}%**
+    ##### **Away games : {ht_ag}**
+    ##### **Away wins : {ht_aw} | Win rate : {round(ht_awp*100,2)}%**
+    ##### **Away draws : {ht_ad} | Draw rate : {round(ht_adp*100,2)}%**
+    ##### **Away losses : {ht_al} | Loss rate : {round(ht_alp*100,2)}%**
     ''')
     
-        
+## team 2 away wins, losses and draws
+    at_hg = int(ht.select_dtypes(include='number').sum(axis=1).sum())
+    at_hw = int(ht["A"])
+    at_hwp = round(at_hw / at_hg, 2)
+    at_hd = int(ht["D"])
+    at_hdp = round(at_hd / at_hg, 2)
+    at_hl = int(ht["H"])
+    ht_hlp = round(at_hl / at_hg, 2)
+
+    text_at2 = dcc.Markdown(f'''
+    ##### **Away games : {at_hg}**
+    ##### **Away wins : {at_hw} | Win rate : {round(at_hwp*100,2)}%**
+    ##### **Away draws : {at_hd} | Draw rate : {round(at_hdp*100,2)}%**
+    ##### **Away losses : {at_hl} | Loss rate : {round(ht_hlp*100,2)}%**
+    ''')
+
+
+## team 1 total wins, losses and draws
+    t1_tg = int(ht_hg + ht_ag)
+    t1_tw = int(ht_hw + ht_aw)
+    t1_twp = round( t1_tw / t1_tg, 2)
+    t1_td = int(ht_hd + ht_ad)
+    t1_tdp = round(t1_td / t1_tg, 2)
+    t1_tl = int(ht_hl + ht_al)
+    t1_tlp = round(t1_tl / t1_tg, 2)
+
+    text_t1t = dcc.Markdown(f'''
+    ##### **Total games : {t1_tg}**
+    ##### **Total wins : {t1_tw} | Win rate : {round(t1_twp*100,2)}%**
+    ##### **Total draws : {t1_td} | Draw rate : {round(t1_tdp*100,2)}%**
+    ##### **Total losses : {t1_tl} | Loss rate : {round(t1_tlp*100,2)}%**
+
+    ''')
+
+## team 2 total wins, losses and draws
+    t2_tg = int(at_ag + at_hg)
+    t2_tw = int(at_aw + at_hw)
+    t2_twp = round( t2_tw / t2_tg, 2)
+    t2_td = int(at_ad + at_hd)
+    t2_tdp = round(t2_td / t2_tg, 2)
+    t2_tl = int(at_al + at_hl)
+    t2_tlp = round(t2_tl / t2_tg, 2)
+
+    text_t2t = dcc.Markdown(f'''
+    ##### **Total games : {t2_tg}**
+    ##### **Total wins : {t2_tw} | Win rate : {round(t2_twp*100,2)}%**
+    ##### **Total draws : {t2_td} | Draw rate : {round(t2_tdp*100,2)}%**
+    ##### **Total losses : {t2_tl} | Loss rate : {round(t2_tlp*100,2)}%**
+
+    ''')
+    
 ## team 1 all goal stats
     pt1 = pd.pivot_table(dff, index = ["HomeTeam"], values = ["FullTimeHomeTeamGoals"], aggfunc = ["sum", "count"])
     pt1.columns = pt1.columns.droplevel(0)
@@ -244,9 +317,9 @@ def head2head(t1, t2):
     agg_t1 = dft1.iloc[0,9]
 
     text_t1 = dcc.Markdown(f'''
-    #### **Average goals per game : {gg_t1}**
-    #### **Average home goals per game : {hgg_t1}**
-    #### **Average away goals per game : {agg_t1}**
+    ##### **Average goals per game : {gg_t1}**
+    ##### **Average home goals per game : {hgg_t1}**
+    ##### **Average away goals per game : {agg_t1}**
     ''')
 
     dt1 = dag.AgGrid(
@@ -269,9 +342,9 @@ def head2head(t1, t2):
     agg_t2= dft2.iloc[0,9]
 
     text_t2 = dcc.Markdown(f'''
-    #### **Average goals per game : {gg_t2}**
-    #### **Average home goals per game : {hgg_t2}**
-    #### **Average away goals per game : {agg_t2}**
+    ##### **Average goals per game : {gg_t2}**
+    ##### **Average home goals per game : {hgg_t2}**
+    ##### **Average away goals per game : {agg_t2}**
     ''')
   
 
@@ -281,7 +354,10 @@ def head2head(t1, t2):
         style={"height": 100, "width": "100%"},
         columnDefs = [{"field" : i} for i in dft2_f.columns])
 
-    return h2h_grid, t1, t2, text_t1, text_ht1, text_ht2, text_at, text_t2
+    return h2h_grid, text_t1, text_ht1, text_ht2, text_t1t, text_at1, text_at2 , text_t2t, text_t2
 
 if __name__ == "__main__":
     app.run(debug = True)
+
+
+
