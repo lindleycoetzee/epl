@@ -80,7 +80,9 @@ h2h_tab = html.Div([
                  html.Div(id = "head2head_team1_stats"),
                  ]),
         dbc.Col([html.Center(html.H4("Overall")),
-
+                 html.Div(id = "ovr_hg_team1_total_data"),
+                 html.Div(id = "ovr_ag_team1_total_data"),
+                 html.Div(id = "ovr_team1_total_data"),
                  ]),
         dbc.Col([html.Center(html.H4("Versus opponent")),
                  html.Div(id = "head2head_team2_home_data"),
@@ -89,6 +91,9 @@ h2h_tab = html.Div([
                  html.Div(id = "head2head_team2_stats"),
                  ]),
         dbc.Col([html.Center(html.H4("Overall")),
+                 html.Div(id = "ovr_hg_team2_total_data"),
+                 html.Div(id = "ovr_ag_team2_total_data"),
+                 html.Div(id = "ovr_team2_total_data"),
                  
                  ]),
             ]),
@@ -121,6 +126,12 @@ app.layout = html.Div([
           Output("head2head_team1_home_data", "children"),
           Output("head2head_team1_away_data", "children"),
           Output("head2head_team1_total_data", "children"),
+          Output("ovr_hg_team1_total_data", "children"),
+          Output("ovr_ag_team1_total_data", "children"),
+          Output("ovr_team1_total_data", "children"),
+          Output("ovr_hg_team2_total_data", "children"),
+          Output("ovr_ag_team2_total_data", "children"),
+          Output("ovr_team2_total_data", "children"),
           Output("head2head_team2_home_data", "children"),
           Output("head2head_team2_away_data", "children"),
           Output("head2head_team2_total_data", "children"),
@@ -171,17 +182,17 @@ def head2head(t1, t2):
 
     ht_hg = int(ht.sum(axis = 1))
     ht_hw = int(ht["H"])
-    ht_hwp = round(ht_hw / ht_hg, 2)
+    ht_hwp = round(ht_hw / ht_hg * 100, 2)
     ht_hd = int(ht["D"])
-    ht_hdp = round(ht_hd / ht_hg, 2)
+    ht_hdp = round(ht_hd / ht_hg * 100, 2)
     ht_hl = int(ht["A"])
-    ht_hlp = round(ht_hl / ht_hg, 2)
+    ht_hlp = round((ht_hl / ht_hg * 100), 2)
 
     text_ht1 = dcc.Markdown(f'''
     ##### **Home games : {ht_hg}**
-    ##### **Home wins : {ht_hw} | Win rate : {round(ht_hwp*100,2)}%**
-    ##### **Home draws : {ht_hd} | Draw rate : {round(ht_hdp*100,2)}%**
-    ##### **Home losses : {ht_hl} | Loss rate : {round(ht_hlp*100,2)}%**
+    ##### **Home wins : {ht_hw} | Win rate : {ht_hwp}%**
+    ##### **Home draws : {ht_hd} | Draw rate : {ht_hdp}%**
+    ##### **Home losses : {ht_hl} | Loss rate : {ht_hlp}%**
     ''')
 
     win_loss_grid_ht = dag.AgGrid(
@@ -203,88 +214,88 @@ def head2head(t1, t2):
 
     at_ag = int(at.sum(axis = 1))
     at_aw = int(at["H"])
-    at_awp = round(at_aw / at_ag, 2)
+    at_awp = round(at_aw / at_ag * 100, 2)
     at_ad = int(at["D"])
-    at_adp = round(at_ad / at_ag, 2)
+    at_adp = round(at_ad / at_ag * 100, 2)
     at_al = int(at["A"])
-    at_alp = round(at_al / at_ag, 2)
+    at_alp = round(at_al / at_ag * 100, 2)
 
     text_at1 = dcc.Markdown(f'''
     ##### **Home games : {at_ag}**
-    ##### **Home wins : {at_aw} | Win rate : {round(at_awp*100,2)}%**
-    ##### **Home draws : {at_ad} | Draw rate : {round(at_adp*100,2)}%**
-    ##### **Home losses : {at_al} | Loss rate : {round(at_alp*100,2)}%**
+    ##### **Home wins : {at_aw} | Win rate : {at_awp}%**
+    ##### **Home draws : {at_ad} | Draw rate : {at_adp}%**
+    ##### **Home losses : {at_al} | Loss rate : {at_alp}%**
     ''')
 
 
 ## team 1 away wins, losses and draws
     ht_ag = int(at.select_dtypes(include='number').sum(axis=1).sum())
     ht_aw = int(at["A"])
-    ht_awp = round(ht_aw / ht_ag, 2)
+    ht_awp = round(ht_aw / ht_ag * 100, 2)
     ht_ad = int(at["D"])
-    ht_adp = round(ht_ad / ht_ag, 2)
+    ht_adp = round(ht_ad / ht_ag * 100, 2)
     ht_al = int(at["H"])
-    ht_alp = round(ht_al / ht_ag, 2)
+    ht_alp = round(ht_al / ht_ag * 100, 2)
 
     text_ht2 = dcc.Markdown(f'''
     ##### **Away games : {ht_ag}**
-    ##### **Away wins : {ht_aw} | Win rate : {round(ht_awp*100,2)}%**
-    ##### **Away draws : {ht_ad} | Draw rate : {round(ht_adp*100,2)}%**
-    ##### **Away losses : {ht_al} | Loss rate : {round(ht_alp*100,2)}%**
+    ##### **Away wins : {ht_aw} | Win rate : {ht_awp}%**
+    ##### **Away draws : {ht_ad} | Draw rate : {ht_adp}%**
+    ##### **Away losses : {ht_al} | Loss rate : {ht_alp}%**
     ''')
     
 ## team 2 away wins, losses and draws
     at_hg = int(ht.select_dtypes(include='number').sum(axis=1).sum())
     at_hw = int(ht["A"])
-    at_hwp = round(at_hw / at_hg, 2)
+    at_hwp = round(at_hw / at_hg * 100, 2)
     at_hd = int(ht["D"])
-    at_hdp = round(at_hd / at_hg, 2)
+    at_hdp = round(at_hd / at_hg * 100, 2)
     at_hl = int(ht["H"])
-    ht_hlp = round(at_hl / at_hg, 2)
+    ht_hlp = round(at_hl / at_hg * 100, 2)
 
     text_at2 = dcc.Markdown(f'''
     ##### **Away games : {at_hg}**
-    ##### **Away wins : {at_hw} | Win rate : {round(at_hwp*100,2)}%**
-    ##### **Away draws : {at_hd} | Draw rate : {round(at_hdp*100,2)}%**
-    ##### **Away losses : {at_hl} | Loss rate : {round(ht_hlp*100,2)}%**
+    ##### **Away wins : {at_hw} | Win rate : {at_hwp}%**
+    ##### **Away draws : {at_hd} | Draw rate : {at_hdp}%**
+    ##### **Away losses : {at_hl} | Loss rate : {ht_hlp}%**
     ''')
 
 
 ## team 1 total wins, losses and draws
     t1_tg = int(ht_hg + ht_ag)
     t1_tw = int(ht_hw + ht_aw)
-    t1_twp = round( t1_tw / t1_tg, 2)
+    t1_twp = round( t1_tw / t1_tg * 100, 2)
     t1_td = int(ht_hd + ht_ad)
-    t1_tdp = round(t1_td / t1_tg, 2)
+    t1_tdp = round(t1_td / t1_tg * 100, 2)
     t1_tl = int(ht_hl + ht_al)
-    t1_tlp = round(t1_tl / t1_tg, 2)
+    t1_tlp = round(t1_tl / t1_tg * 100, 2)
 
     text_t1t = dcc.Markdown(f'''
     ##### **Total games : {t1_tg}**
-    ##### **Total wins : {t1_tw} | Win rate : {round(t1_twp*100,2)}%**
-    ##### **Total draws : {t1_td} | Draw rate : {round(t1_tdp*100,2)}%**
-    ##### **Total losses : {t1_tl} | Loss rate : {round(t1_tlp*100,2)}%**
+    ##### **Total wins : {t1_tw} | Win rate : {t1_twp}%**
+    ##### **Total draws : {t1_td} | Draw rate : {t1_tdp}%**
+    ##### **Total losses : {t1_tl} | Loss rate : {t1_tlp}%**
 
     ''')
 
 ## team 2 total wins, losses and draws
     t2_tg = int(at_ag + at_hg)
     t2_tw = int(at_aw + at_hw)
-    t2_twp = round( t2_tw / t2_tg, 2)
+    t2_twp = round( t2_tw / t2_tg * 100, 2)
     t2_td = int(at_ad + at_hd)
-    t2_tdp = round(t2_td / t2_tg, 2)
+    t2_tdp = round(t2_td / t2_tg * 100, 2)
     t2_tl = int(at_al + at_hl)
-    t2_tlp = round(t2_tl / t2_tg, 2)
+    t2_tlp = round(t2_tl / t2_tg * 100, 2)
 
     text_t2t = dcc.Markdown(f'''
     ##### **Total games : {t2_tg}**
-    ##### **Total wins : {t2_tw} | Win rate : {round(t2_twp*100,2)}%**
-    ##### **Total draws : {t2_td} | Draw rate : {round(t2_tdp*100,2)}%**
-    ##### **Total losses : {t2_tl} | Loss rate : {round(t2_tlp*100,2)}%**
+    ##### **Total wins : {t2_tw} | Win rate : {t2_twp}%**
+    ##### **Total draws : {t2_td} | Draw rate : {t2_tdp}%**
+    ##### **Total losses : {t2_tl} | Loss rate : {t2_tlp}%**
 
     ''')
     
-## team 1 all goal stats
+## team 1 goal stats
     pt1 = pd.pivot_table(dff, index = ["HomeTeam"], values = ["FullTimeHomeTeamGoals"], aggfunc = ["sum", "count"])
     pt1.columns = pt1.columns.droplevel(0)
     pt1 = pt1.reset_index()
@@ -328,7 +339,7 @@ def head2head(t1, t2):
         style={"height": 100, "width": "100%"},
         columnDefs = [{"field" : i} for i in dft1_f.columns])
     
-## team 2 all goal stats
+## team 2 goal stats
     dft2 = dft[dft["Team"] == t2 ]
     dft2["TGoals"] = dft2["HGoals"] + dft2["AGoals"]
     dft2["TGames"] = dft2["HGames"] + dft2["AGames"]
@@ -354,10 +365,110 @@ def head2head(t1, t2):
         style={"height": 100, "width": "100%"},
         columnDefs = [{"field" : i} for i in dft2_f.columns])
 
-    return h2h_grid, text_t1, text_ht1, text_ht2, text_t1t, text_at1, text_at2 , text_t2t, text_t2
+
+
+
+## team 1 overall stats
+    t1_full_stats = full_stats[full_stats["Team"] == t1]
+    t1_total_games = t1_full_stats.iloc[0,1]
+    t1_total_wins = t1_full_stats.iloc[0,2]
+    t1_total_win_perc = t1_full_stats.iloc[0,3]
+    t1_total_draws = t1_full_stats.iloc[0,4]
+    t1_total_draw_perc = t1_full_stats.iloc[0,5]
+    t1_total_losses = t1_full_stats.iloc[0,6]
+    t1_total_loss_perc = t1_full_stats.iloc[0,7]
+
+    ovr_text_t1 = dcc.Markdown(f'''
+    ##### **Total games : {t1_total_games}**
+    ##### **Wins : {t1_total_wins} | Win rate : {t1_total_win_perc}%**
+    ##### **Draws : {t1_total_draws} | Draw rate : {t1_total_draw_perc}%**
+    ##### **Losses : {t1_total_losses} | Loss rate : {t1_total_loss_perc}%**
+    ''')
+    
+    t1_total_home_games = t1_full_stats.iloc[0,8]
+    t1_total_home_wins = t1_full_stats.iloc[0,9]
+    t1_total_home_win_perc = t1_full_stats.iloc[0,10]
+    t1_total_home_draws = t1_full_stats.iloc[0,11]
+    t1_total_home_draw_perc = t1_full_stats.iloc[0,12]
+    t1_total_home_losses = t1_full_stats.iloc[0,13]
+    t1_total_home_loss_perc = t1_full_stats.iloc[0,14]
+
+    ovr_hg_text_t1 = dcc.Markdown(f'''
+    ##### **Home games : {t1_total_home_games}**
+    ##### **Wins : {t1_total_home_wins} | Win rate : {t1_total_home_win_perc}%**
+    ##### **Draws : {t1_total_home_draws} | Draw rate : {t1_total_home_draw_perc}%**
+    ##### **Losses : {t1_total_home_losses} | Loss rate : {t1_total_home_loss_perc}%**
+    ''')
+
+    t1_total_away_games = t1_full_stats.iloc[0,15]
+    t1_total_away_wins = t1_full_stats.iloc[0,16]
+    t1_total_away_win_perc = t1_full_stats.iloc[0,17]
+    t1_total_away_draws = t1_full_stats.iloc[0,18]
+    t1_total_away_draw_perc = t1_full_stats.iloc[0,19]
+    t1_total_away_losses = t1_full_stats.iloc[0,20]
+    t1_total_away_loss_perc = t1_full_stats.iloc[0,21]
+
+
+    ovr_ag_text_t1 = dcc.Markdown(f'''
+    ##### **Away Games : {t1_total_away_games}**
+    ##### **Wins : {t1_total_away_wins} | Win rate : {t1_total_away_win_perc}%**
+    ##### **Draws : {t1_total_away_draws} | Draw rate : {t1_total_away_draw_perc}%**
+    ##### **Losses : {t1_total_away_losses} | Loss rate : {t1_total_away_loss_perc}%**
+    ''')
+
+## team 2 overall stats
+    t2_full_stats = full_stats[full_stats["Team"] == t2]
+    t2_total_games = t2_full_stats.iloc[0,1]
+    t2_total_wins = t2_full_stats.iloc[0,2]
+    t2_total_win_perc = t2_full_stats.iloc[0,3]
+    t2_total_draws = t2_full_stats.iloc[0,4]
+    t2_total_draw_perc = t2_full_stats.iloc[0,5]
+    t2_total_losses = t2_full_stats.iloc[0,6]
+    t2_total_loss_perc = t2_full_stats.iloc[0,7]
+
+    ovr_text_t2 = dcc.Markdown(f'''
+    ##### **Total games : {t2_total_games}**
+    ##### **Wins : {t2_total_wins} | Win rate : {t2_total_win_perc}%**
+    ##### **Draws : {t2_total_draws} | Draw rate : {t2_total_draw_perc}%**
+    ##### **Losses : {t2_total_losses} | Loss rate : {t2_total_loss_perc}%**
+    ''')
+    
+    t2_total_home_games = t2_full_stats.iloc[0,8]
+    t2_total_home_wins = t2_full_stats.iloc[0,9]
+    t2_total_home_win_perc = t2_full_stats.iloc[0,10]
+    t2_total_home_draws = t2_full_stats.iloc[0,11]
+    t2_total_home_draw_perc = t2_full_stats.iloc[0,12]
+    t2_total_home_losses = t2_full_stats.iloc[0,13]
+    t2_total_home_loss_perc = t2_full_stats.iloc[0,14]
+
+    ovr_hg_text_t2 = dcc.Markdown(f'''
+    ##### **Home games : {t2_total_home_games}**
+    ##### **Wins : {t2_total_home_wins} | Win rate : {t2_total_home_win_perc}%**
+    ##### **Draws : {t2_total_home_draws} | Draw rate : {t2_total_home_draw_perc}%**
+    ##### **Losses : {t2_total_home_losses} | Loss rate : {t2_total_home_loss_perc}%**
+    ''')
+
+    t2_total_away_games = t2_full_stats.iloc[0,15]
+    t2_total_away_wins = t2_full_stats.iloc[0,16]
+    t2_total_away_win_perc = t2_full_stats.iloc[0,17]
+    t2_total_away_draws = t2_full_stats.iloc[0,18]
+    t2_total_away_draw_perc = t2_full_stats.iloc[0,19]
+    t2_total_away_losses = t2_full_stats.iloc[0,20]
+    t2_total_away_loss_perc = t2_full_stats.iloc[0,21]
+
+
+    ovr_ag_text_t2 = dcc.Markdown(f'''
+    ##### **Away Games : {t2_total_away_games}**
+    ##### **Wins : {t2_total_away_wins} | Win rate : {t2_total_away_win_perc}%**
+    ##### **Draws : {t2_total_away_draws} | Draw rate : {t2_total_away_draw_perc}%**
+    ##### **Losses : {t2_total_away_losses} | Loss rate : {t2_total_away_loss_perc}%**
+    ''')
+
+
+
+
+    return h2h_grid, text_t1, text_ht1, text_ht2, text_t1t, ovr_hg_text_t1, ovr_ag_text_t1, ovr_text_t1, ovr_hg_text_t2, ovr_ag_text_t2, ovr_text_t2, text_at1, text_at2 , text_t2t, text_t2
 
 if __name__ == "__main__":
     app.run(debug = True)
-
-
 
