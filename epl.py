@@ -5,7 +5,8 @@ import dash_bootstrap_components as dbc
 import dash_ag_grid as dag
 import plotly.graph_objects as go
 
-## head to head including home, away and goals. then give a probabilty score.
+## add multi value dropdown to sort data by seasons
+## give a probabilty score
 ## allow to chat with dataset
 ## compare data with officila epl site
 ## error handling
@@ -31,12 +32,20 @@ full_stats = pd.read_csv("eplstats.csv")
 full_stats_grid = dag.AgGrid(
     rowData = full_stats.to_dict("records"),
     columnSize="responsiveSizeToFit",
-        dashGridOptions = {"domLayout": "autoHeight",
-                       "rowHeight": 30},
+    style={"height": 800, "width": "100%"},
     columnDefs = [{"field" : i} for i in full_stats.columns],    
     )
 
-## get full match data for all games
+## get all epl goals from local file
+goals_data = pd.read_csv("eplgoals.csv")
+goals_data_grid = dag.AgGrid(
+    rowData = goals_data.to_dict("records"),
+    columnSize="responsiveSizeToFit",
+    style={"height": 800, "width": "100%"},
+    columnDefs = [{"field" : i} for i in goals_data.columns],    
+    )
+
+## get full match data for all games and goals
 match_data = pd.read_csv("PremierLeague.csv")
 
 ## create dropdown menus for head to head
@@ -44,11 +53,15 @@ team1 = dcc.Dropdown(sorted(match_data["HomeTeam"].unique()), id = "dd_team1", v
 team2 = dcc.Dropdown(sorted(match_data["HomeTeam"].unique()), id = "dd_team2", value = "Arsenal")
 
 
-## create grids for log and full stats
+## create grids for log, full stats and goals
 log_table = dbc.Container([
         dbc.Row([log_grid]),
         ])
 full_stats_table = dbc.Row([full_stats_grid])
+
+goals_table = dbc.Container([
+        dbc.Row([goals_data_grid]),
+        ])
 
 
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -83,6 +96,7 @@ h2h_tab = html.Div([
                  html.Div(id = "ovr_hg_team1_total_data"),
                  html.Div(id = "ovr_ag_team1_total_data"),
                  html.Div(id = "ovr_team1_total_data"),
+                 html.Div(id = "ovr_team1_goal_data"),
                  ]),
         dbc.Col([html.Center(html.H4("Versus opponent")),
                  html.Div(id = "head2head_team2_home_data"),
@@ -94,7 +108,7 @@ h2h_tab = html.Div([
                  html.Div(id = "ovr_hg_team2_total_data"),
                  html.Div(id = "ovr_ag_team2_total_data"),
                  html.Div(id = "ovr_team2_total_data"),
-                 
+                 html.Div(id = "ovr_team2_goal_data"),
                  ]),
             ]),
 
@@ -113,7 +127,8 @@ app.layout = html.Div([
 
     dbc.Tabs([
             dbc.Tab(log_table, label="Log"),
-            dbc.Tab(full_stats_table, label="All Stats"),
+            dbc.Tab(full_stats_table, label="All Win Loss Draw Stats"),
+            dbc.Tab(goals_table, label="Goals Stats"),
             dbc.Tab(h2h_tab, label="Head 2 Head"),
         ]),
 
@@ -129,13 +144,15 @@ app.layout = html.Div([
           Output("ovr_hg_team1_total_data", "children"),
           Output("ovr_ag_team1_total_data", "children"),
           Output("ovr_team1_total_data", "children"),
+          Output("ovr_team1_goal_data", "children"),
           Output("ovr_hg_team2_total_data", "children"),
           Output("ovr_ag_team2_total_data", "children"),
           Output("ovr_team2_total_data", "children"),
           Output("head2head_team2_home_data", "children"),
           Output("head2head_team2_away_data", "children"),
           Output("head2head_team2_total_data", "children"),
-          Output("head2head_team2_stats", "children"), 
+          Output("head2head_team2_stats", "children"),
+          Output("ovr_team2_goal_data", "children"),
           Input("dd_team1", "value"),
           Input("dd_team2", "value"),)
 
@@ -365,9 +382,6 @@ def head2head(t1, t2):
         style={"height": 100, "width": "100%"},
         columnDefs = [{"field" : i} for i in dft2_f.columns])
 
-
-
-
 ## team 1 overall stats
     t1_full_stats = full_stats[full_stats["Team"] == t1]
     t1_total_games = t1_full_stats.iloc[0,1]
@@ -464,11 +478,35 @@ def head2head(t1, t2):
     ##### **Losses : {t2_total_away_losses} | Loss rate : {t2_total_away_loss_perc}%**
     ''')
 
+## team 1 ovr goal stats
+    t1_ovr_goals_df = goals_data[goals_data["Team"] == t1]
+
+    ovr_gg_t1 = t1_ovr_goals_df.iloc[0,3]
+    ovr_hgg_t1 = t1_ovr_goals_df.iloc[0,6]
+    ovr_agg_t1 = t1_ovr_goals_df.iloc[0,9]
+
+    ovr_t1_goals = dcc.Markdown(f'''
+    ##### **Average goals per game : {ovr_gg_t1}**
+    ##### **Average home goals per game : {ovr_hgg_t1}**
+    ##### **Average away goals per game : {ovr_agg_t1}**
+    ''')
+    
+## team 2 ovr goal stats
+    t2_ovr_goals_df = goals_data[goals_data["Team"] == t2]
+
+    ovr_gg_t2 = t2_ovr_goals_df.iloc[0,3]
+    ovr_hgg_t2 = t2_ovr_goals_df.iloc[0,6]
+    ovr_agg_t2 = t2_ovr_goals_df.iloc[0,9]
+
+    ovr_t2_goals = dcc.Markdown(f'''
+    ##### **Average goals per game : {ovr_gg_t2}**
+    ##### **Average home goals per game : {ovr_hgg_t2}**
+    ##### **Average away goals per game : {ovr_agg_t2}**
+    ''')
 
 
-
-    return h2h_grid, text_t1, text_ht1, text_ht2, text_t1t, ovr_hg_text_t1, ovr_ag_text_t1, ovr_text_t1, ovr_hg_text_t2, ovr_ag_text_t2, ovr_text_t2, text_at1, text_at2 , text_t2t, text_t2
+    return h2h_grid, text_t1, text_ht1, text_ht2, text_t1t, ovr_hg_text_t1, ovr_ag_text_t1, ovr_text_t1, ovr_t1_goals, ovr_hg_text_t2, ovr_ag_text_t2, ovr_text_t2, \
+           text_at1, text_at2 , text_t2t, text_t2, ovr_t2_goals
 
 if __name__ == "__main__":
     app.run(debug = True)
-
