@@ -8,8 +8,8 @@ import plotly.graph_objects as go
 
 ## give a probabilty score
 ## allow to chat with dataset
-## compare data with officila epl site
 ## error handling
+## styling
 
 url = "https://en.wikipedia.org/wiki/2024%E2%80%9325_Premier_League"
 
@@ -18,13 +18,28 @@ dfs = pd.read_html(url)
 log = dfs[4]
 log = log[log.columns[:-1]]
 
+columnDefs = [
+    {"field": "Pos", 'width': 40},
+    {"field": "Team", 'width': 100},
+    {"field": "Pld", 'width': 40},
+    {"field": "W", 'width': 40},
+    {"field": "D", 'width': 40},
+    {"field": "L", 'width': 40},
+    {"field": "GF", 'width': 40},
+    {"field": "GA", 'width': 40},
+    {"field": "GD", 'width': 40},
+    {"field": "Pts", 'width': 40},
+    
+]
+
 log_grid = dag.AgGrid(
     rowData = log.to_dict("records"),
     columnSize="responsiveSizeToFit",
     dashGridOptions = {"domLayout": "autoHeight",
                        "rowHeight": 30},
     style = {"height": None},
-    columnDefs=[{"field": i} for i in log.columns],
+##    columnDefs=[{"field": i} for i in log.columns],
+    columnDefs = columnDefs,
 )
 
 ## get all epl stats from local file
@@ -46,7 +61,7 @@ goals_data_grid = dag.AgGrid(
     )
 
 ## get full match data for all games and goals
-match_data = pd.read_csv("PremierLeague.csv")
+match_data = pd.read_csv("PremierLeague(1).csv")
 
 ## create dropdown menus for head to head
 team1 = dcc.Dropdown(sorted(match_data["HomeTeam"].unique()), id = "dd_team1", value = "Man United")
@@ -55,7 +70,7 @@ team2 = dcc.Dropdown(sorted(match_data["HomeTeam"].unique()), id = "dd_team2", v
 ## create dropdown menus for season(s)
 seasons = ['1993-1994', '1994-1995', '1995-1996', '1996-1997', '1997-1998', '1998-1999', '1999-2000', '2000-2001', '2001-2002', '2002-2003', '2003-2004', \
            '2004-2005', '2005-2006', '2006-2007', '2007-2008', '2008-2009', '2009-2010', '2010-2011', '2011-2012', '2012-2013', '2013-2014', '2014-2015', \
-           '2015-2016', '2016-2017', '2017-2018', '2018-2019', '2019-2020', '2020-2021', '2021-2022', '2022-2023', '2023-2024']
+           '2015-2016', '2016-2017', '2017-2018', '2018-2019', '2019-2020', '2020-2021', '2021-2022', '2022-2023', '2023-2024', '2024-2025']
 season = dcc.Dropdown(match_data["Season"].unique(), id = "season", value = seasons, multi = True)
 
 
