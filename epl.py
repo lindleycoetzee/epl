@@ -4,10 +4,9 @@ from dash import Dash, html, dcc, Output, Input, callback
 import dash_bootstrap_components as dbc
 import dash_ag_grid as dag
 import plotly.graph_objects as go
-
+from functools import reduce
 
 ## give a probabilty score
-## allow to chat with dataset
 ## error handling
 ## styling
 
@@ -42,6 +41,7 @@ log_grid = dag.AgGrid(
     columnDefs = columnDefs,
 )
 
+
 ## get all epl stats from local file
 full_stats = pd.read_csv("eplstats.csv")
 full_stats_grid = dag.AgGrid(
@@ -61,7 +61,7 @@ goals_data_grid = dag.AgGrid(
     )
 
 ## get full match data for all games and goals
-match_data = pd.read_csv("PremierLeague(1).csv")
+match_data = pd.read_csv("PremierLeague(2).csv")
 
 ## create dropdown menus for head to head
 team1 = dcc.Dropdown(sorted(match_data["HomeTeam"].unique()), id = "dd_team1", value = "Man United")
@@ -189,6 +189,7 @@ def head2head(t1, t2, season):
     dff = dff[["Season", "Date", "HomeTeam", "AwayTeam", "FullTimeHomeTeamGoals", "FullTimeAwayTeamGoals", "FullTimeResult"]].sort_values("Date", ascending = False)
     dff = dff[((dff["HomeTeam"] == t1) | (dff["AwayTeam"] == t1)) & ((dff["HomeTeam"] == t2) | (dff["AwayTeam"] == t2)) ]
     dff = dff[dff["Season"].isin(season)]
+    dff = dff.sort_values(by = "Season", ascending = False)
 
     h2h_grid = dag.AgGrid(
         rowData = dff.to_dict("records"),
@@ -412,7 +413,108 @@ def head2head(t1, t2, season):
         columnDefs = [{"field" : i} for i in dft2_f.columns])
 
 ## team 1 overall stats
-    t1_full_stats = full_stats[full_stats["Team"] == t1]
+
+    
+    bpt_df = match_data[["Season", "HomeTeam", "AwayTeam", "FullTimeHomeTeamGoals", "FullTimeAwayTeamGoals"]]
+    bpt_df = bpt_df[bpt_df["Season"].isin(season)]
+    bpt_df["GoalDiff"] = bpt_df["FullTimeHomeTeamGoals"] - bpt_df["FullTimeAwayTeamGoals"]
+    bpt_df
+
+
+    htw_conditions = [
+        (bpt_df["GoalDiff"] >= 1),
+        (bpt_df["GoalDiff"] <= -1),
+        (bpt_df["GoalDiff"] == 0)
+    ]
+    htw_values = [1,0,0]
+
+    bpt_df["HomeTeamWin"] = np.select(htw_conditions, htw_values)
+
+    atw_conditions = [
+        (bpt_df["GoalDiff"] <= -1),
+        (bpt_df["GoalDiff"] >= 1),
+        (bpt_df["GoalDiff"] == 0)
+    ]
+    atw_values = [1,0,0]
+
+
+    bpt_df["HomeTeamWin"] = np.select(htw_conditions, htw_values)
+    bpt_df["AwayTeamWin"] = np.select(atw_conditions, atw_values)
+
+
+
+    hw_df = pd.pivot_table(bpt_df, index = ["HomeTeam"], values = ["HomeTeamWin"], aggfunc = ["sum", "count"])
+    print(hw_df)
+    hw_df.columns = hw_df.columns.droplevel(0)
+    print(hw_df)
+    hw_df = hw_df.reset_index()
+    hw_df.columns = ["Team", "HomeTeamWins", "Games"]
+    hw_df["HomeWinPercentage"] = round(hw_df["HomeTeamWins"] / hw_df["Games"] * 100, 2)
+    final_hw_df = hw_df.sort_values(by = "HomeTeamWins", ascending = False)
+
+
+    aw_df = pd.pivot_table(bpt_df, index = ["AwayTeam"], values = ["AwayTeamWin"], aggfunc = ["sum", "count"])
+    aw_df.columns = aw_df.columns.droplevel(0)
+    aw_df = aw_df.reset_index()
+    aw_df.columns = ["Team", "AwayTeamWins", "Games"]
+    aw_df["AwayWinPercentage"] = round(aw_df["AwayTeamWins"] / aw_df["Games"] * 100, 2)
+    final_aw_df = aw_df.sort_values(by = "AwayTeamWins", ascending = False)
+
+
+    hd_df = bpt_df[bpt_df["GoalDiff"] == 0]
+    del hd_df["AwayTeam"]
+    hd_df_pivot_table = pd.pivot_table(hd_df, index = ["HomeTeam"], values = ["GoalDiff"], aggfunc = ["count"])
+
+    hd_df_pivot_table.columns = hd_df_pivot_table.columns.droplevel(0)
+    hd_df_pivot_table = hd_df_pivot_table.reset_index()
+    hd_df_pivot_table.columns = ["Team", "HomeDraws"]
+
+    hd_final_df = hd_df_pivot_table.sort_values(by = "HomeDraws", ascending = False)
+
+    ad_df = bpt_df[bpt_df["GoalDiff"] == 0]
+    del ad_df["HomeTeam"]
+    ad_df_pivot_table = pd.pivot_table(ad_df, index = ["AwayTeam"], values = ["AwayTeamWin"], aggfunc = ["count"])
+    ad_df_pivot_table.columns = ad_df_pivot_table.columns.droplevel(0)
+    ad_df_pivot_table = ad_df_pivot_table.reset_index()
+    ad_df_pivot_table.columns = ["Team", "AwayDraws"]
+    ad_final_df = ad_df_pivot_table.sort_values(by = "AwayDraws", ascending = False)
+
+    all_dfs = [final_hw_df, final_aw_df, hd_final_df, ad_final_df]
+    comdined_df = reduce(lambda  left,right: pd.merge(left,right,on=['Team'],
+                                                how='outer'), all_dfs)
+
+    comdined_df.columns = ["Team", "HTWins", "HGames", "HWinPerc", "ATWins", "AGames", 
+                           "AWinPerc", "HDraws", "ADraws"]
+
+    final_comdined_df = comdined_df
+    final_comdined_df = final_comdined_df.fillna(0)
+
+    final_comdined_df["TGames"] = final_comdined_df["HGames"] + final_comdined_df["AGames"]
+    final_comdined_df["HGLosses"] = final_comdined_df["HGames"] - final_comdined_df["HTWins"]- final_comdined_df["HDraws"]
+    final_comdined_df["AGLosses"] = final_comdined_df["AGames"] - final_comdined_df["ATWins"]- final_comdined_df["ADraws"]
+    final_comdined_df["TWins"] = final_comdined_df["HTWins"] + final_comdined_df["ATWins"]
+    final_comdined_df["TWinPerc"] = round(final_comdined_df["TWins"] / final_comdined_df["TGames"] * 100, 2)
+
+    final_comdined_df["Tdraws"] = final_comdined_df["HDraws"] + final_comdined_df["ADraws"]
+    final_comdined_df["TDrawPerc"] = round(final_comdined_df["Tdraws"] / final_comdined_df["TGames"] * 100, 2)
+
+    final_comdined_df["HDrawPerc"] = round(final_comdined_df["HDraws"] / final_comdined_df["HGames"] * 100, 2)
+    final_comdined_df["ADrawPerc"] = round(final_comdined_df["ADraws"] / final_comdined_df["AGames"] * 100, 2)
+
+    final_comdined_df["Tlosses"] = final_comdined_df["HGLosses"] + final_comdined_df["AGLosses"]
+    final_comdined_df["TLossPerc"] = round(final_comdined_df["Tlosses"] / final_comdined_df["TGames"] * 100, 2)
+
+    final_comdined_df["HLossPerc"] = round(final_comdined_df["HGLosses"] / final_comdined_df["HGames"] * 100, 2)
+    final_comdined_df["ALossPerc"] = round(final_comdined_df["AGLosses"] / final_comdined_df["AGames"] * 100, 2)
+
+
+    final_comdined_df = final_comdined_df[["Team", "TGames", "TWins", "TWinPerc", "Tdraws", "TDrawPerc", "Tlosses", "TLossPerc", "HGames", "HTWins", "HWinPerc", \
+                                           "HDraws", "HDrawPerc", "HGLosses", "HLossPerc", "AGames", "ATWins", "AWinPerc", "ADraws", "ADrawPerc", \
+                                           "AGLosses", "ALossPerc"]]
+
+
+    
+    t1_full_stats = final_comdined_df[final_comdined_df["Team"] == t1]
     t1_total_games = t1_full_stats.iloc[0,1]
     t1_total_wins = t1_full_stats.iloc[0,2]
     t1_total_win_perc = t1_full_stats.iloc[0,3]
@@ -460,7 +562,7 @@ def head2head(t1, t2, season):
     ''')
 
 ## team 2 overall stats
-    t2_full_stats = full_stats[full_stats["Team"] == t2]
+    t2_full_stats = final_comdined_df[final_comdined_df["Team"] == t2]
     t2_total_games = t2_full_stats.iloc[0,1]
     t2_total_wins = t2_full_stats.iloc[0,2]
     t2_total_win_perc = t2_full_stats.iloc[0,3]
@@ -539,6 +641,3 @@ def head2head(t1, t2, season):
 
 if __name__ == "__main__":
     app.run(debug = True)
-
-
-
